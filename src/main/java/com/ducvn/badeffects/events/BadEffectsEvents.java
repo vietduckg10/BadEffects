@@ -1,9 +1,12 @@
 package com.ducvn.badeffects.events;
 
 import net.minecraft.block.*;
+import net.minecraft.entity.EntityType;
+import net.minecraft.entity.effect.LightningBoltEntity;
 import net.minecraft.entity.merchant.villager.VillagerEntity;
 import net.minecraft.entity.passive.IronGolemEntity;
 import net.minecraft.entity.player.PlayerEntity;
+import net.minecraft.inventory.EquipmentSlotType;
 import net.minecraft.item.Item;
 import net.minecraft.item.Items;
 import net.minecraft.potion.EffectInstance;
@@ -50,6 +53,7 @@ public class BadEffectsEvents {
                     Blocks.JACK_O_LANTERN.getBlock(), Blocks.LAVA.getBlock()
             )
     );
+    private static int lightningTick = 0;
 
     @SubscribeEvent
     public static void GiveHeatstrokeEvent(TickEvent.PlayerTickEvent event){
@@ -232,12 +236,35 @@ public class BadEffectsEvents {
             PlayerEntity player = (PlayerEntity) event.getSource().getEntity();
             Random roll = new Random();
             if (roll.nextBoolean()){
-                player.displayClientMessage(new TranslationTextComponent("This is your karma").withStyle(TextFormatting.BOLD).withStyle(TextFormatting.DARK_RED), true);
-                player.addEffect(new EffectInstance(Effects.BAD_OMEN, 18000));
+                player.displayClientMessage(new TranslationTextComponent("You will pay for what you did").withStyle(TextFormatting.BOLD).withStyle(TextFormatting.DARK_RED), true);
+                player.addEffect(new EffectInstance(Effects.UNLUCK, 36000));
             }
         }
     }
-//new update
+
+    @SubscribeEvent
+    public static void GiveLightningStrikeEvent(TickEvent.PlayerTickEvent event){
+        World world = event.player.level;
+        if (!world.isClientSide){
+            PlayerEntity player = event.player;
+            if (player.getEffect(Effects.UNLUCK) != null){
+                lightningTick++;
+                if (lightningTick % 100 == 0){
+                    Random roll = new Random();
+                    if (roll.nextDouble() < 0.1D){
+                        player.displayClientMessage(new TranslationTextComponent("This is your karma").withStyle(TextFormatting.BOLD).withStyle(TextFormatting.DARK_PURPLE), true);
+                        LightningBoltEntity lightningBoltEntity = new LightningBoltEntity(EntityType.LIGHTNING_BOLT, world);
+                        lightningBoltEntity.setPos(player.getX(), player.getY(), player.getZ());
+                        world.addFreshEntity(lightningBoltEntity);
+                    }
+                }
+            }
+            else {
+                lightningTick = 0;
+            }
+        }
+    }
+
     @SubscribeEvent
     public static void GiveVisionDisruptEvent(LivingDamageEvent event){
         World world = event.getEntity().level;
@@ -254,18 +281,29 @@ public class BadEffectsEvents {
     }
 
     @SubscribeEvent
-    public static void GiveInfectionBreakWoodEvent(BlockEvent.BreakEvent event){
+    public static void GiveBrokenHandEvent(BlockEvent.BreakEvent event){
         World world = event.getPlayer().level;
         if (!world.isClientSide && event.getPlayer() instanceof PlayerEntity){
             Block block = world.getBlockState(event.getPos()).getBlock();
+            System.out.println(block.getTags());
             if (block.getTags().contains(new ResourceLocation("minecraft:logs"))
-            || block.getTags().contains(new ResourceLocation("forge:logs"))){
+            || block.getTags().contains(new ResourceLocation("forge:logs"))
+            || block.getTags().contains(new ResourceLocation("minecraft:glass"))
+                    || block.getTags().contains(new ResourceLocation("forge:glass"))
+                    || block.getTags().contains(new ResourceLocation("minecraft:glass_panes"))
+                    || block.getTags().contains(new ResourceLocation("forge:glass_panes"))){
                 PlayerEntity player = event.getPlayer();
                 if (player.getItemInHand(Hand.MAIN_HAND).getItem() == Items.AIR){
                     Random roll = new Random();
-                    if (roll.nextDouble() < 0.2D){
-                        player.displayClientMessage(new TranslationTextComponent("You scratched your hand").withStyle(TextFormatting.BOLD).withStyle(TextFormatting.DARK_GREEN), true);
-                        player.addEffect(new EffectInstance(Effects.POISON, 200));
+                    if (roll.nextDouble() < 0.34D){
+                        if (block.getTags().contains(new ResourceLocation("minecraft:glass"))
+                                || block.getTags().contains(new ResourceLocation("forge:glass"))
+                                || block.getTags().contains(new ResourceLocation("minecraft:glass_panes"))
+                                || block.getTags().contains(new ResourceLocation("forge:glass_panes"))){
+                            player.addEffect(new EffectInstance(Effects.WITHER, 100));
+                        }
+                        player.displayClientMessage(new TranslationTextComponent("You hurt your hand").withStyle(TextFormatting.BOLD).withStyle(TextFormatting.RED), true);
+                        player.hurt(DamageSource.WITHER, 2);
                     }
                 }
             }
@@ -276,11 +314,25 @@ public class BadEffectsEvents {
     public static void GiveInfectionCactusEvent(LivingDamageEvent event){
         World world = event.getEntity().level;
         if (!world.isClientSide && event.getEntity() instanceof PlayerEntity){
-            if (event.getSource() == DamageSource.CACTUS){
+            if (event.getSource() == DamageSource.CACTUS
+            || event.getSource() == DamageSource.SWEET_BERRY_BUSH){
                 PlayerEntity player = (PlayerEntity) event.getEntity();
                 if (player.getArmorCoverPercentage() < 1.0f){
+                    double adjustment = 0;
+                    if (event.getSource() == DamageSource.SWEET_BERRY_BUSH){
+                        if (player.hasItemInSlot(EquipmentSlotType.FEET)){
+                            adjustment = adjustment + 0.5D;
+                        }
+                        if (player.hasItemInSlot(EquipmentSlotType.LEGS)){
+                            adjustment = adjustment + 0.5D;
+                        }
+                    }
+                    if (event.getSource() == DamageSource.CACTUS){
+                        adjustment = player.getArmorCoverPercentage();
+                    }
+                    System.out.println(adjustment);
                     Random roll = new Random();
-                    if (roll.nextDouble() < (1D - 0.6D - 0.4D * player.getArmorCoverPercentage())){
+                    if (roll.nextDouble() < (1D - 0.6D - 0.4D * adjustment)){
                         player.displayClientMessage(new TranslationTextComponent("You should wear more armor").withStyle(TextFormatting.BOLD).withStyle(TextFormatting.DARK_GREEN), true);
                         player.addEffect(new EffectInstance(Effects.POISON, 200));
                     }
@@ -288,4 +340,5 @@ public class BadEffectsEvents {
             }
         }
     }
+    //make uncooked food has higher chance to trigger food poisoning
 }
