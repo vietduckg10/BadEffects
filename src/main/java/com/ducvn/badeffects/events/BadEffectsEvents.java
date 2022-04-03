@@ -1,5 +1,6 @@
 package com.ducvn.badeffects.events;
 
+import com.ducvn.badeffects.config.BadEffectsConfig;
 import net.minecraft.block.*;
 import net.minecraft.entity.EntityType;
 import net.minecraft.entity.effect.LightningBoltEntity;
@@ -12,7 +13,6 @@ import net.minecraft.item.Items;
 import net.minecraft.potion.EffectInstance;
 import net.minecraft.potion.Effects;
 import net.minecraft.state.properties.BlockStateProperties;
-import net.minecraft.tags.Tag;
 import net.minecraft.util.DamageSource;
 import net.minecraft.util.Hand;
 import net.minecraft.util.ResourceLocation;
@@ -20,7 +20,6 @@ import net.minecraft.util.math.BlockPos;
 import net.minecraft.util.text.TextFormatting;
 import net.minecraft.util.text.TranslationTextComponent;
 import net.minecraft.world.World;
-import net.minecraftforge.common.Tags;
 import net.minecraftforge.event.TickEvent;
 import net.minecraftforge.event.entity.living.LivingDamageEvent;
 import net.minecraftforge.event.entity.living.LivingDeathEvent;
@@ -33,7 +32,6 @@ import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
 import java.util.Random;
-import java.util.function.Predicate;
 
 @Mod.EventBusSubscriber
 public class BadEffectsEvents {
@@ -54,11 +52,24 @@ public class BadEffectsEvents {
             )
     );
     private static int lightningTick = 0;
+    private static List<ResourceLocation> rawFood = new ArrayList<>(
+            Arrays.asList(
+                    ResourceLocation.tryParse("minecraft:potato"), ResourceLocation.tryParse("minecraft:carrot"),
+                    ResourceLocation.tryParse("minecraft:apple"), ResourceLocation.tryParse("minecraft:porkchop"),
+                    ResourceLocation.tryParse("minecraft:cod"), ResourceLocation.tryParse("minecraft:salmon"),
+                    ResourceLocation.tryParse("minecraft:tropical_fish"), ResourceLocation.tryParse("minecraft:melon"),
+                    ResourceLocation.tryParse("minecraft:beef"), ResourceLocation.tryParse("minecraft:chicken"),
+                    ResourceLocation.tryParse("minecraft:rabbit"), ResourceLocation.tryParse("minecraft:mutton"),
+                    ResourceLocation.tryParse("minecraft:beetroot"), ResourceLocation.tryParse("minecraft:sweet_berries"),
+                    ResourceLocation.tryParse("minecraft:rotten_flesh")
+            )
+    );
 
     @SubscribeEvent
     public static void GiveHeatstrokeEvent(TickEvent.PlayerTickEvent event){
         World world = event.player.level;
-        if (!world.isClientSide && world.getBiome(event.player.blockPosition()).getTemperature(event.player.blockPosition()) > 1.7F){
+        if (!world.isClientSide && world.getBiome(event.player.blockPosition()).getTemperature(event.player.blockPosition()) > 1.7F
+        && !BadEffectsConfig.heat_stroke.get()){
             PlayerEntity player = event.player;
             if (player.isOnFire()){
                 onFireTick++;
@@ -83,7 +94,8 @@ public class BadEffectsEvents {
     @SubscribeEvent
     public static void GiveBrokenLegEvent(LivingDamageEvent event){
         World world = event.getEntity().level;
-        if (!world.isClientSide && event.getEntity() instanceof PlayerEntity){
+        if (!world.isClientSide && event.getEntity() instanceof PlayerEntity
+        && !BadEffectsConfig.broke_leg.get()){
             PlayerEntity player = (PlayerEntity) event.getEntity();
             if (event.getSource() == DamageSource.FALL && event.getAmount() >= 2.0F){
                 player.displayClientMessage(new TranslationTextComponent("You hurt your legs").withStyle(TextFormatting.BOLD).withStyle(TextFormatting.RED),true);
@@ -100,7 +112,7 @@ public class BadEffectsEvents {
     @SubscribeEvent
     public static void GiveLackOfOxygenEvent(TickEvent.PlayerTickEvent event){
         World world = event.player.level;
-        if (!world.isClientSide){
+        if (!world.isClientSide && !BadEffectsConfig.lack_of_oxygen.get()){
             PlayerEntity player = event.player;
             if (player.getY() >= 256){
                 aboveBuildLimitTick++;
@@ -121,7 +133,8 @@ public class BadEffectsEvents {
     @SubscribeEvent
     public static void GiveNauseaWhileDrowning(LivingDamageEvent event){
         World world = event.getEntity().level;
-        if (!world.isClientSide && event.getEntity() instanceof PlayerEntity){
+        if (!world.isClientSide && event.getEntity() instanceof PlayerEntity
+        && !BadEffectsConfig.nausea_drowning.get()){
             PlayerEntity player = (PlayerEntity) event.getEntity();
             if (event.getSource() == DamageSource.DROWN){
                 Random roll = new Random();
@@ -136,7 +149,8 @@ public class BadEffectsEvents {
     @SubscribeEvent
     public static void GiveFrostBiteEvent(TickEvent.PlayerTickEvent event){
         World world = event.player.level;
-        if (!world.isClientSide && world.getBiome(event.player.blockPosition()).getTemperature(event.player.blockPosition()) < 0.6F){
+        if (!world.isClientSide && world.getBiome(event.player.blockPosition()).getTemperature(event.player.blockPosition()) < 0.6F
+        && !BadEffectsConfig.frostbite.get()){
             PlayerEntity player = event.player;
             if (!hotItem.contains(player.getItemInHand(Hand.MAIN_HAND).getItem())
                     && !hotItem.contains(player.getItemInHand(Hand.OFF_HAND).getItem())
@@ -185,11 +199,16 @@ public class BadEffectsEvents {
     @SubscribeEvent
     public static void GiveFoodPoisoningEvent(LivingEntityUseItemEvent event){
         World world = event.getEntity().level;
-        if(!world.isClientSide && event.getEntity() instanceof PlayerEntity && event.getItem().isEdible()){
+        if(!world.isClientSide && event.getEntity() instanceof PlayerEntity && event.getItem().isEdible()
+        && !BadEffectsConfig.food_poisoning.get()){
             PlayerEntity player = (PlayerEntity) event.getEntity();
             if (player.getUseItemRemainingTicks() == 1){
+                double triggerChance = 0.5D;
+                if (rawFood.contains(event.getItem().getItem().getRegistryName())){
+                    triggerChance = 1.0D;
+                }
                 Random roll = new Random();
-                if (roll.nextDouble() < 0.05D){
+                if (roll.nextDouble() < triggerChance){
                     player.displayClientMessage(new TranslationTextComponent("You just got food poisoning").withStyle(TextFormatting.BOLD).withStyle(TextFormatting.DARK_GREEN), true);
                     player.addEffect(new EffectInstance(Effects.CONFUSION, 200));
                     player.addEffect(new EffectInstance(Effects.POISON, 300));
@@ -201,7 +220,8 @@ public class BadEffectsEvents {
     @SubscribeEvent
     public static void GiveStuckEvent(LivingDamageEvent event){
         World world = event.getEntity().level;
-        if (!world.isClientSide && event.getEntity() instanceof PlayerEntity){
+        if (!world.isClientSide && event.getEntity() instanceof PlayerEntity
+        && !BadEffectsConfig.stuck.get()){
             PlayerEntity player = (PlayerEntity) event.getEntity();
             if (event.getSource() == DamageSource.IN_WALL){
                 Random roll = new Random();
@@ -216,7 +236,8 @@ public class BadEffectsEvents {
     @SubscribeEvent
     public static void GiveStunEvent(LivingDamageEvent event){
         World world = event.getEntity().level;
-        if (!world.isClientSide && event.getEntity() instanceof PlayerEntity){
+        if (!world.isClientSide && event.getEntity() instanceof PlayerEntity
+        && !BadEffectsConfig.stun.get()){
             PlayerEntity player = (PlayerEntity) event.getEntity();
             if (event.getSource().isExplosion()){
                 player.displayClientMessage(new TranslationTextComponent("You are stunned by the explosion").withStyle(TextFormatting.BOLD).withStyle(TextFormatting.DARK_PURPLE), true);
@@ -232,7 +253,8 @@ public class BadEffectsEvents {
     public static void GiveKarmaEvent(LivingDeathEvent event){
         World world = event.getEntity().level;
         if (!world.isClientSide && event.getSource().getEntity() instanceof PlayerEntity
-        && (event.getEntity() instanceof VillagerEntity || event.getEntity() instanceof IronGolemEntity)){
+        && (event.getEntity() instanceof VillagerEntity || event.getEntity() instanceof IronGolemEntity)
+        && !BadEffectsConfig.karma.get()){
             PlayerEntity player = (PlayerEntity) event.getSource().getEntity();
             Random roll = new Random();
             if (roll.nextBoolean()){
@@ -245,7 +267,7 @@ public class BadEffectsEvents {
     @SubscribeEvent
     public static void GiveLightningStrikeEvent(TickEvent.PlayerTickEvent event){
         World world = event.player.level;
-        if (!world.isClientSide){
+        if (!world.isClientSide && !BadEffectsConfig.karma.get()){
             PlayerEntity player = event.player;
             if (player.getEffect(Effects.UNLUCK) != null){
                 lightningTick++;
@@ -268,7 +290,8 @@ public class BadEffectsEvents {
     @SubscribeEvent
     public static void GiveVisionDisruptEvent(LivingDamageEvent event){
         World world = event.getEntity().level;
-        if (!world.isClientSide && event.getEntity() instanceof PlayerEntity){
+        if (!world.isClientSide && event.getEntity() instanceof PlayerEntity
+        && !BadEffectsConfig.vision_disrupt.get()){
             PlayerEntity player = (PlayerEntity) event.getEntity();
             if (event.getSource().isMagic() && player.getEffect(Effects.POISON) == null){
                 Random roll = new Random();
@@ -283,7 +306,8 @@ public class BadEffectsEvents {
     @SubscribeEvent
     public static void GiveBrokenHandEvent(BlockEvent.BreakEvent event){
         World world = event.getPlayer().level;
-        if (!world.isClientSide && event.getPlayer() instanceof PlayerEntity){
+        if (!world.isClientSide && event.getPlayer() instanceof PlayerEntity
+        && !BadEffectsConfig.broken_hand.get()){
             Block block = world.getBlockState(event.getPos()).getBlock();
             System.out.println(block.getTags());
             if (block.getTags().contains(new ResourceLocation("minecraft:logs"))
@@ -311,9 +335,10 @@ public class BadEffectsEvents {
     }
 
     @SubscribeEvent
-    public static void GiveInfectionCactusEvent(LivingDamageEvent event){
+    public static void GiveInfectionEvent(LivingDamageEvent event){
         World world = event.getEntity().level;
-        if (!world.isClientSide && event.getEntity() instanceof PlayerEntity){
+        if (!world.isClientSide && event.getEntity() instanceof PlayerEntity
+        && !BadEffectsConfig.infection.get()){
             if (event.getSource() == DamageSource.CACTUS
             || event.getSource() == DamageSource.SWEET_BERRY_BUSH){
                 PlayerEntity player = (PlayerEntity) event.getEntity();
@@ -340,5 +365,18 @@ public class BadEffectsEvents {
             }
         }
     }
-    //make uncooked food has higher chance to trigger food poisoning
+    //new update
+    @SubscribeEvent
+    public static void GiveHeadBumpEvent(LivingDamageEvent event){
+        World world = event.getEntity().level;
+        if (!world.isClientSide && event.getEntity() instanceof PlayerEntity
+        && !BadEffectsConfig.head_bump.get()){
+            PlayerEntity player = (PlayerEntity) event.getEntity();
+            if (event.getSource() == DamageSource.FLY_INTO_WALL){
+                player.displayClientMessage(new TranslationTextComponent("You hit the wall with your head").withStyle(TextFormatting.BOLD).withStyle(TextFormatting.RED), true);
+                player.addEffect(new EffectInstance(Effects.BLINDNESS, 25, 4));
+                player.addEffect(new EffectInstance(Effects.CONFUSION, (int) (event.getAmount() * 20)));
+            }
+        }
+    }
 }
