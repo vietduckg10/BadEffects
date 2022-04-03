@@ -355,7 +355,6 @@ public class BadEffectsEvents {
                     if (event.getSource() == DamageSource.CACTUS){
                         adjustment = player.getArmorCoverPercentage();
                     }
-                    System.out.println(adjustment);
                     Random roll = new Random();
                     if (roll.nextDouble() < (1D - 0.6D - 0.4D * adjustment)){
                         player.displayClientMessage(new TranslationTextComponent("You should wear more armor").withStyle(TextFormatting.BOLD).withStyle(TextFormatting.DARK_GREEN), true);
