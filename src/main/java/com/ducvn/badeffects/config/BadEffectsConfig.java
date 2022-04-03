@@ -6,7 +6,7 @@ public class BadEffectsConfig {
     public static final ForgeConfigSpec.Builder BUILDER = new ForgeConfigSpec.Builder();
     public static final ForgeConfigSpec SPEC;
 
-    public static final ForgeConfigSpec.ConfigValue<Boolean> heat_stroke;
+    public static final ForgeConfigSpec.ConfigValue<Boolean> heatstroke;
     public static final ForgeConfigSpec.ConfigValue<Boolean> broke_leg;
     public static final ForgeConfigSpec.ConfigValue<Boolean> lack_of_oxygen;
     public static final ForgeConfigSpec.ConfigValue<Boolean> nausea_drowning;
@@ -23,7 +23,7 @@ public class BadEffectsConfig {
     static {
         BUILDER.push("Bad Effects Config");
 
-        heat_stroke = BUILDER.define("Disable Heat Stroke: ", false);
+        heatstroke = BUILDER.define("Disable Heatstroke: ", false);
         broke_leg = BUILDER.define("Disable Broken Leg: ", false);
         lack_of_oxygen = BUILDER.define("Disable Lack of Oxygen: ", false);
         nausea_drowning = BUILDER.define("Disable Nausea Drowning: ", false);
