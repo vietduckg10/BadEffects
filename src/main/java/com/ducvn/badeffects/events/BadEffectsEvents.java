@@ -69,7 +69,7 @@ public class BadEffectsEvents {
     public static void GiveHeatstrokeEvent(TickEvent.PlayerTickEvent event){
         World world = event.player.level;
         if (!world.isClientSide && world.getBiome(event.player.blockPosition()).getTemperature(event.player.blockPosition()) > 1.7F
-        && !BadEffectsConfig.heat_stroke.get()){
+        && !BadEffectsConfig.heatstroke.get()){
             PlayerEntity player = event.player;
             if (player.isOnFire()){
                 onFireTick++;
