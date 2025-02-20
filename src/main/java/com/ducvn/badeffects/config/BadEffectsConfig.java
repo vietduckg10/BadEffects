@@ -19,6 +19,7 @@ public class BadEffectsConfig {
     public static final ForgeConfigSpec.ConfigValue<Boolean> broken_hand;
     public static final ForgeConfigSpec.ConfigValue<Boolean> infection;
     public static final ForgeConfigSpec.ConfigValue<Boolean> head_bump;
+    public static final ForgeConfigSpec.ConfigValue<Boolean> exhausted;
 
     static {
         BUILDER.push("Bad Effects Config");
@@ -36,6 +37,7 @@ public class BadEffectsConfig {
         broken_hand = BUILDER.define("Disable Broken Hand: ", false);
         infection = BUILDER.define("Disable Infection: ", false);
         head_bump = BUILDER.define("Disable Head Bump: ", false);
+        exhausted = BUILDER.define("Disable Exhausted: ", false);
 
         BUILDER.pop();
         SPEC = BUILDER.build();

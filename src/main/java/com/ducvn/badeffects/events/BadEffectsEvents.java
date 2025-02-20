@@ -5,7 +5,11 @@ import net.minecraft.ChatFormatting;
 import net.minecraft.core.BlockPos;
 import net.minecraft.network.chat.TranslatableComponent;
 import net.minecraft.resources.ResourceLocation;
+import net.minecraft.server.level.ServerPlayer;
+import net.minecraft.stats.ServerStatsCounter;
+import net.minecraft.stats.Stats;
 import net.minecraft.tags.BlockTags;
+import net.minecraft.util.Mth;
 import net.minecraft.world.InteractionHand;
 import net.minecraft.world.damagesource.DamageSource;
 import net.minecraft.world.effect.MobEffectInstance;
@@ -77,7 +81,7 @@ public class BadEffectsEvents {
     public static void GiveHeatstrokeEvent(TickEvent.PlayerTickEvent event){
         Level world = event.player.level;
         if (!world.isClientSide && world.getBiome(event.player.blockPosition()).value().getTemperature(event.player.blockPosition()) > 1.7F
-        && !BadEffectsConfig.heatstroke.get()){
+                && !BadEffectsConfig.heatstroke.get()){
             Player player = event.player;
             if (player.isOnFire()){
                 onFireTick++;
@@ -103,7 +107,7 @@ public class BadEffectsEvents {
     public static void GiveBrokenLegEvent(LivingDamageEvent event){
         Level world = event.getEntity().level;
         if (!world.isClientSide && event.getEntity() instanceof Player
-        && !BadEffectsConfig.broke_leg.get()){
+                && !BadEffectsConfig.broke_leg.get()){
             Player player = (Player) event.getEntity();
             if (event.getSource() == DamageSource.FALL && event.getAmount() >= 2.0F){
                 player.displayClientMessage(new TranslatableComponent("You hurt your legs").withStyle(ChatFormatting.BOLD).withStyle(ChatFormatting.RED),true);
@@ -141,7 +145,7 @@ public class BadEffectsEvents {
     public static void GiveNauseaWhileDrowning(LivingDamageEvent event){
         Level world = event.getEntity().level;
         if (!world.isClientSide && event.getEntity() instanceof Player
-        && !BadEffectsConfig.nausea_drowning.get()){
+                && !BadEffectsConfig.nausea_drowning.get()){
             Player player = (Player) event.getEntity();
             if (event.getSource() == DamageSource.DROWN){
                 Random roll = new Random();
@@ -157,7 +161,7 @@ public class BadEffectsEvents {
     public static void GiveFrostBiteEvent(TickEvent.PlayerTickEvent event){
         Level world = event.player.level;
         if (!world.isClientSide && world.getBiome(event.player.blockPosition()).value().getTemperature(event.player.blockPosition()) < 0.6F
-        && !BadEffectsConfig.frostbite.get()){
+                && !BadEffectsConfig.frostbite.get()){
             Player player = event.player;
             if (!hotItem.contains(player.getItemInHand(InteractionHand.MAIN_HAND).getItem())
                     && !hotItem.contains(player.getItemInHand(InteractionHand.OFF_HAND).getItem())
@@ -192,7 +196,7 @@ public class BadEffectsEvents {
                         return true;
                     }
                     if (state.getBlock() instanceof CampfireBlock
-                    || state.getBlock() instanceof AbstractFurnaceBlock){
+                            || state.getBlock() instanceof AbstractFurnaceBlock){
                         if (state.getValue(BlockStateProperties.LIT)){
                             return true;
                         }
@@ -207,12 +211,12 @@ public class BadEffectsEvents {
     public static void GiveFoodPoisoningEvent(LivingEntityUseItemEvent event){
         Level world = event.getEntity().level;
         if(!world.isClientSide && event.getEntity() instanceof Player && event.getItem().isEdible()
-        && !BadEffectsConfig.food_poisoning.get()){
+                && !BadEffectsConfig.food_poisoning.get()){
             Player player = (Player) event.getEntity();
             if (player.getUseItemRemainingTicks() == 1){
-                double triggerChance = 0.05D;
+                double triggerChance = 0.3D;
                 if (rawFood.contains(event.getItem().getItem().getRegistryName())){
-                    triggerChance = 0.1D;
+                    triggerChance = 0.75D;
                 }
                 Random roll = new Random();
                 if (roll.nextDouble() < triggerChance){
@@ -228,7 +232,7 @@ public class BadEffectsEvents {
     public static void GiveStuckEvent(LivingDamageEvent event){
         Level world = event.getEntity().level;
         if (!world.isClientSide && event.getEntity() instanceof Player
-        && !BadEffectsConfig.stuck.get()){
+                && !BadEffectsConfig.stuck.get()){
             Player player = (Player) event.getEntity();
             if (event.getSource() == DamageSource.IN_WALL){
                 Random roll = new Random();
@@ -244,7 +248,7 @@ public class BadEffectsEvents {
     public static void GiveStunEvent(LivingDamageEvent event){
         Level world = event.getEntity().level;
         if (!world.isClientSide && event.getEntity() instanceof Player
-        && !BadEffectsConfig.stun.get()){
+                && !BadEffectsConfig.stun.get()){
             Player player = (Player) event.getEntity();
             if (event.getSource().isExplosion()){
                 player.displayClientMessage(new TranslatableComponent("You are stunned by the explosion").withStyle(ChatFormatting.BOLD).withStyle(ChatFormatting.DARK_PURPLE), true);
@@ -260,8 +264,8 @@ public class BadEffectsEvents {
     public static void GiveKarmaEvent(LivingDeathEvent event){
         Level world = event.getEntity().level;
         if (!world.isClientSide && event.getSource().getEntity() instanceof Player
-        && (event.getEntity() instanceof Villager || event.getEntity() instanceof IronGolem)
-        && !BadEffectsConfig.karma.get()){
+                && (event.getEntity() instanceof Villager || event.getEntity() instanceof IronGolem)
+                && !BadEffectsConfig.karma.get()){
             Player player = (Player) event.getSource().getEntity();
             Random roll = new Random();
             if (roll.nextBoolean()){
@@ -298,7 +302,7 @@ public class BadEffectsEvents {
     public static void GiveVisionDisruptEvent(LivingDamageEvent event){
         Level world = event.getEntity().level;
         if (!world.isClientSide && event.getEntity() instanceof Player
-        && !BadEffectsConfig.vision_disrupt.get()){
+                && !BadEffectsConfig.vision_disrupt.get()){
             Player player = (Player) event.getEntity();
             if (event.getSource().isMagic() && player.getEffect(MobEffects.POISON) == null){
                 Random roll = new Random();
@@ -314,7 +318,7 @@ public class BadEffectsEvents {
     public static void GiveBrokenHandEvent(BlockEvent.BreakEvent event){
         Level world = event.getPlayer().level;
         if (!world.isClientSide && event.getPlayer() instanceof Player
-        && !BadEffectsConfig.broken_hand.get()){
+                && !BadEffectsConfig.broken_hand.get()){
             Block block = world.getBlockState(event.getPos()).getBlock();
             if (block.defaultBlockState().is(BlockTags.LOGS)
                     || block.defaultBlockState().is(BlockTags.IMPERMEABLE)
@@ -341,9 +345,9 @@ public class BadEffectsEvents {
     public static void GiveInfectionEvent(LivingDamageEvent event){
         Level world = event.getEntity().level;
         if (!world.isClientSide && event.getEntity() instanceof Player
-        && !BadEffectsConfig.infection.get()){
+                && !BadEffectsConfig.infection.get()){
             if (event.getSource() == DamageSource.CACTUS
-            || event.getSource() == DamageSource.SWEET_BERRY_BUSH){
+                    || event.getSource() == DamageSource.SWEET_BERRY_BUSH){
                 Player player = (Player) event.getEntity();
                 if (player.getArmorCoverPercentage() < 1.0f){
                     double adjustment = 0;
@@ -372,12 +376,74 @@ public class BadEffectsEvents {
     public static void GiveHeadBumpEvent(LivingDamageEvent event){
         Level world = event.getEntity().level;
         if (!world.isClientSide && event.getEntity() instanceof Player
-        && !BadEffectsConfig.head_bump.get()){
+                && !BadEffectsConfig.head_bump.get()){
             Player player = (Player) event.getEntity();
             if (event.getSource() == DamageSource.FLY_INTO_WALL){
                 player.displayClientMessage(new TranslatableComponent("You hit the wall with your head").withStyle(ChatFormatting.BOLD).withStyle(ChatFormatting.RED), true);
                 player.addEffect(new MobEffectInstance(MobEffects.BLINDNESS, 25, 4));
                 player.addEffect(new MobEffectInstance(MobEffects.CONFUSION, (int) (event.getAmount() * 20)));
+            }
+        }
+    }
+
+    @SubscribeEvent
+    public static void GiveExhaustedEvent(TickEvent.PlayerTickEvent event){
+        Level world = event.player.level;
+        if (!world.isClientSide && !BadEffectsConfig.exhausted.get() && (TickEvent.Phase.START == event.phase)){
+            ServerStatsCounter serverstatscounter = ((ServerPlayer)event.player).getStats();
+            int timeSinceRest = Mth.clamp(serverstatscounter.getValue(Stats.CUSTOM.get(Stats.TIME_SINCE_REST)), 1, Integer.MAX_VALUE);
+            if ((72000 <= timeSinceRest) && (timeSinceRest % 12000 == 0)){ // 1 day = 24000 ticks
+                event.player.displayClientMessage(new TranslatableComponent("You stay awake for too long, you feel exhausted")
+                        .withStyle(ChatFormatting.BOLD).withStyle(ChatFormatting.GRAY), true);
+                switch ((timeSinceRest / 12000) % 3){
+                    case 0:{
+                        if (!event.player.hasEffect(MobEffects.MOVEMENT_SLOWDOWN)){
+                            event.player.addEffect(new MobEffectInstance(MobEffects.MOVEMENT_SLOWDOWN, 24000,0));
+                        }
+                        else {
+                            event.player.addEffect(
+                                    new MobEffectInstance(
+                                            MobEffects.MOVEMENT_SLOWDOWN,
+                                            24000,
+                                            event.player.getEffect(MobEffects.MOVEMENT_SLOWDOWN).getAmplifier() + 1
+                                    )
+                            );
+                        }
+                        break;
+                    }
+                    case 1:{
+                        if (!event.player.hasEffect(MobEffects.WEAKNESS)){
+                            event.player.addEffect(new MobEffectInstance(MobEffects.WEAKNESS, 24000,0));
+                        }
+                        else {
+                            event.player.addEffect(
+                                    new MobEffectInstance(
+                                            MobEffects.WEAKNESS,
+                                            24000,
+                                            event.player.getEffect(MobEffects.WEAKNESS).getAmplifier() + 1
+                                    )
+                            );
+                        }
+                        break;
+                    }
+                    case 2:{
+                        if (!event.player.hasEffect(MobEffects.DIG_SLOWDOWN)){
+                            event.player.addEffect(new MobEffectInstance(MobEffects.DIG_SLOWDOWN, 24000,0));
+                        }
+                        else {
+                            event.player.addEffect(
+                                    new MobEffectInstance(
+                                            MobEffects.DIG_SLOWDOWN,
+                                            24000,
+                                            event.player.getEffect(MobEffects.DIG_SLOWDOWN).getAmplifier() + 1
+                                    )
+                            );
+                        }
+                        break;
+                    }
+                    default:
+                        break;
+                }
             }
         }
     }
