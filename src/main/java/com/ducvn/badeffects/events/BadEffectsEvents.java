@@ -6,7 +6,11 @@ import net.minecraft.core.BlockPos;
 import net.minecraft.core.Registry;
 import net.minecraft.network.chat.Component;
 import net.minecraft.resources.ResourceLocation;
+import net.minecraft.server.level.ServerPlayer;
+import net.minecraft.stats.ServerStatsCounter;
+import net.minecraft.stats.Stats;
 import net.minecraft.tags.TagKey;
+import net.minecraft.util.Mth;
 import net.minecraft.world.InteractionHand;
 import net.minecraft.world.damagesource.DamageSource;
 import net.minecraft.world.effect.MobEffectInstance;
@@ -373,7 +377,7 @@ public class BadEffectsEvents {
             }
         }
     }
-    //new update
+
     @SubscribeEvent
     public static void GiveHeadBumpEvent(LivingDamageEvent event){
         Level world = event.getEntity().level;
@@ -384,6 +388,68 @@ public class BadEffectsEvents {
                 player.displayClientMessage(Component.literal("You hit the wall with your head").withStyle(ChatFormatting.BOLD).withStyle(ChatFormatting.RED), true);
                 player.addEffect(new MobEffectInstance(MobEffects.BLINDNESS, 25, 4));
                 player.addEffect(new MobEffectInstance(MobEffects.CONFUSION, (int) (event.getAmount() * 20)));
+            }
+        }
+    }
+
+    @SubscribeEvent
+    public static void GiveExhaustedEvent(TickEvent.PlayerTickEvent event){
+        Level world = event.player.level;
+        if (!world.isClientSide && !BadEffectsConfig.exhausted.get() && (TickEvent.Phase.START == event.phase)){
+            ServerStatsCounter serverstatscounter = ((ServerPlayer)event.player).getStats();
+            int timeSinceRest = Mth.clamp(serverstatscounter.getValue(Stats.CUSTOM.get(Stats.TIME_SINCE_REST)), 1, Integer.MAX_VALUE);
+            if ((300 <= timeSinceRest) && (timeSinceRest % 100 == 0)){ // 1 day = 24000 ticks
+                event.player.displayClientMessage(Component.literal("You stay awake for too long, you feel exhausted")
+                        .withStyle(ChatFormatting.BOLD).withStyle(ChatFormatting.GRAY), true);
+                switch ((timeSinceRest / 100) % 3){
+                    case 0:{
+                        if (!event.player.hasEffect(MobEffects.MOVEMENT_SLOWDOWN)){
+                            event.player.addEffect(new MobEffectInstance(MobEffects.MOVEMENT_SLOWDOWN, 24000,0));
+                        }
+                        else {
+                            event.player.addEffect(
+                                    new MobEffectInstance(
+                                            MobEffects.MOVEMENT_SLOWDOWN,
+                                            24000,
+                                            event.player.getEffect(MobEffects.MOVEMENT_SLOWDOWN).getAmplifier() + 1
+                                    )
+                            );
+                        }
+                        break;
+                    }
+                    case 1:{
+                        if (!event.player.hasEffect(MobEffects.WEAKNESS)){
+                            event.player.addEffect(new MobEffectInstance(MobEffects.WEAKNESS, 24000,0));
+                        }
+                        else {
+                            event.player.addEffect(
+                                    new MobEffectInstance(
+                                            MobEffects.WEAKNESS,
+                                            24000,
+                                            event.player.getEffect(MobEffects.WEAKNESS).getAmplifier() + 1
+                                    )
+                            );
+                        }
+                        break;
+                    }
+                    case 2:{
+                        if (!event.player.hasEffect(MobEffects.DIG_SLOWDOWN)){
+                            event.player.addEffect(new MobEffectInstance(MobEffects.DIG_SLOWDOWN, 24000,0));
+                        }
+                        else {
+                            event.player.addEffect(
+                                    new MobEffectInstance(
+                                            MobEffects.DIG_SLOWDOWN,
+                                            24000,
+                                            event.player.getEffect(MobEffects.DIG_SLOWDOWN).getAmplifier() + 1
+                                    )
+                            );
+                        }
+                        break;
+                    }
+                    default:
+                        break;
+                }
             }
         }
     }
