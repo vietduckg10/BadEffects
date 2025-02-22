@@ -398,10 +398,10 @@ public class BadEffectsEvents {
         if (!world.isClientSide && !BadEffectsConfig.exhausted.get() && (TickEvent.Phase.START == event.phase)){
             ServerStatsCounter serverstatscounter = ((ServerPlayer)event.player).getStats();
             int timeSinceRest = Mth.clamp(serverstatscounter.getValue(Stats.CUSTOM.get(Stats.TIME_SINCE_REST)), 1, Integer.MAX_VALUE);
-            if ((300 <= timeSinceRest) && (timeSinceRest % 100 == 0)){ // 1 day = 24000 ticks
+            if ((72000 <= timeSinceRest) && (timeSinceRest % 24000 == 0)){ // 1 day = 24000 ticks
                 event.player.displayClientMessage(Component.literal("You stay awake for too long, you feel exhausted")
                         .withStyle(ChatFormatting.BOLD).withStyle(ChatFormatting.GRAY), true);
-                switch ((timeSinceRest / 100) % 3){
+                switch ((timeSinceRest / 12000) % 3){
                     case 0:{
                         if (!event.player.hasEffect(MobEffects.MOVEMENT_SLOWDOWN)){
                             event.player.addEffect(new MobEffectInstance(MobEffects.MOVEMENT_SLOWDOWN, 24000,0));
