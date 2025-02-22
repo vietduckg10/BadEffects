@@ -4,6 +4,7 @@ import com.ducvn.badeffects.config.BadEffectsConfig;
 import net.minecraft.ChatFormatting;
 import net.minecraft.core.BlockPos;
 import net.minecraft.core.Registry;
+import net.minecraft.core.registries.Registries;
 import net.minecraft.network.chat.Component;
 import net.minecraft.resources.ResourceLocation;
 import net.minecraft.server.level.ServerPlayer;
@@ -13,6 +14,8 @@ import net.minecraft.tags.TagKey;
 import net.minecraft.util.Mth;
 import net.minecraft.world.InteractionHand;
 import net.minecraft.world.damagesource.DamageSource;
+import net.minecraft.world.damagesource.DamageSources;
+import net.minecraft.world.damagesource.DamageTypes;
 import net.minecraft.world.effect.MobEffectInstance;
 import net.minecraft.world.effect.MobEffects;
 import net.minecraft.world.entity.EntityType;
@@ -42,6 +45,7 @@ import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
 import java.util.Random;
+import java.util.stream.Collectors;
 
 @Mod.EventBusSubscriber
 public class BadEffectsEvents {
@@ -68,21 +72,11 @@ public class BadEffectsEvents {
                     Items.TROPICAL_FISH, Items.MELON_SLICE, Items.BEEF, Items.CHICKEN, Items.RABBIT,
                     Items.MUTTON, Items.BEETROOT, Items.SWEET_BERRIES, Items.ROTTEN_FLESH
             )
-//            Arrays.asList(
-//                    ResourceLocation.tryParse("minecraft:potato"), ResourceLocation.tryParse("minecraft:carrot"),
-//                    ResourceLocation.tryParse("minecraft:apple"), ResourceLocation.tryParse("minecraft:porkchop"),
-//                    ResourceLocation.tryParse("minecraft:cod"), ResourceLocation.tryParse("minecraft:salmon"),
-//                    ResourceLocation.tryParse("minecraft:tropical_fish"), ResourceLocation.tryParse("minecraft:melon"),
-//                    ResourceLocation.tryParse("minecraft:beef"), ResourceLocation.tryParse("minecraft:chicken"),
-//                    ResourceLocation.tryParse("minecraft:rabbit"), ResourceLocation.tryParse("minecraft:mutton"),
-//                    ResourceLocation.tryParse("minecraft:beetroot"), ResourceLocation.tryParse("minecraft:sweet_berries"),
-//                    ResourceLocation.tryParse("minecraft:rotten_flesh")
-//            )
     );
 
     @SubscribeEvent
     public static void GiveHeatstrokeEvent(TickEvent.PlayerTickEvent event){
-        Level world = event.player.level;
+        Level world = event.player.level();
         if (!world.isClientSide && world.getBiome(event.player.blockPosition()).get().getModifiedClimateSettings().temperature() > 1.7F
                 && !BadEffectsConfig.heatstroke.get()){
             Player player = event.player;
@@ -108,11 +102,11 @@ public class BadEffectsEvents {
 
     @SubscribeEvent
     public static void GiveBrokenLegEvent(LivingDamageEvent event){
-        Level world = event.getEntity().level;
+        Level world = event.getEntity().level();
         if (!world.isClientSide && event.getEntity() instanceof Player
                 && !BadEffectsConfig.broke_leg.get()){
             Player player = (Player) event.getEntity();
-            if (event.getSource() == DamageSource.FALL && event.getAmount() >= 2.0F){
+            if ((event.getSource().type().equals(DamageTypes.FALL)) && event.getAmount() >= 2.0F){
                 player.displayClientMessage(Component.literal("You hurt your legs").withStyle(ChatFormatting.BOLD).withStyle(ChatFormatting.RED),true);
                 player.addEffect(new MobEffectInstance(MobEffects.MOVEMENT_SLOWDOWN, 20 + ((int) event.getAmount() - 2) * 20));
                 if (event.getAmount() >= 10){
@@ -125,7 +119,7 @@ public class BadEffectsEvents {
 
     @SubscribeEvent
     public static void GiveLackOfOxygenEvent(TickEvent.PlayerTickEvent event){
-        Level world = event.player.level;
+        Level world = event.player.level();
         if (!world.isClientSide && !BadEffectsConfig.lack_of_oxygen.get()){
             Player player = event.player;
             if (player.getY() >= 256){
@@ -146,11 +140,11 @@ public class BadEffectsEvents {
 
     @SubscribeEvent
     public static void GiveNauseaWhileDrowning(LivingDamageEvent event){
-        Level world = event.getEntity().level;
+        Level world = event.getEntity().level();
         if (!world.isClientSide && event.getEntity() instanceof Player
                 && !BadEffectsConfig.nausea_drowning.get()){
             Player player = (Player) event.getEntity();
-            if (event.getSource() == DamageSource.DROWN){
+            if (event.getSource().type().equals(DamageTypes.DROWN)){
                 Random roll = new Random();
                 if (roll.nextDouble() < 0.34D) {
                     player.displayClientMessage(Component.literal("You're drowning").withStyle(ChatFormatting.BOLD).withStyle(ChatFormatting.AQUA), true);
@@ -162,7 +156,7 @@ public class BadEffectsEvents {
 
     @SubscribeEvent
     public static void GiveFrostBiteEvent(TickEvent.PlayerTickEvent event){
-        Level world = event.player.level;
+        Level world = event.player.level();
         if (!world.isClientSide && world.getBiome(event.player.blockPosition()).get().getModifiedClimateSettings().temperature() < 0.6F
                 && !BadEffectsConfig.frostbite.get()){
             Player player = event.player;
@@ -177,7 +171,7 @@ public class BadEffectsEvents {
                     player.addEffect(new MobEffectInstance(MobEffects.HUNGER));
                     if ((onColdBiomeTick - 1700) % 100 == 0 && onColdBiomeTick > 1700) {
                         player.displayClientMessage(Component.literal("You got frostbite").withStyle(ChatFormatting.BOLD).withStyle(ChatFormatting.AQUA), true);
-                        player.hurt(DamageSource.WITHER, 2.0F + (float) (onColdBiomeTick - 1800) / 600F);
+                        player.hurt(player.damageSources().wither(), 2.0F + (float) (onColdBiomeTick - 1800) / 600F);
                     }
                 }
             }
@@ -212,7 +206,7 @@ public class BadEffectsEvents {
 
     @SubscribeEvent
     public static void GiveFoodPoisoningEvent(LivingEntityUseItemEvent event){
-        Level world = event.getEntity().level;
+        Level world = event.getEntity().level();
         if(!world.isClientSide && event.getEntity() instanceof Player && event.getItem().isEdible()
                 && !BadEffectsConfig.food_poisoning.get()){
             Player player = (Player) event.getEntity();
@@ -233,11 +227,11 @@ public class BadEffectsEvents {
 
     @SubscribeEvent
     public static void GiveStuckEvent(LivingDamageEvent event){
-        Level world = event.getEntity().level;
+        Level world = event.getEntity().level();
         if (!world.isClientSide && event.getEntity() instanceof Player
                 && !BadEffectsConfig.stuck.get()){
             Player player = (Player) event.getEntity();
-            if (event.getSource() == DamageSource.IN_WALL){
+            if (event.getSource().type().equals(DamageTypes.IN_WALL)){
                 Random roll = new Random();
                 if (roll.nextDouble() < 0.1D){
                     player.displayClientMessage(Component.literal("You're stuck and hard to move").withStyle(ChatFormatting.BOLD).withStyle(ChatFormatting.GRAY), true);
@@ -249,11 +243,11 @@ public class BadEffectsEvents {
 
     @SubscribeEvent
     public static void GiveStunEvent(LivingDamageEvent event){
-        Level world = event.getEntity().level;
+        Level world = event.getEntity().level();
         if (!world.isClientSide && event.getEntity() instanceof Player
                 && !BadEffectsConfig.stun.get()){
             Player player = (Player) event.getEntity();
-            if (event.getSource().isExplosion()){
+            if (event.getSource().type().equals(DamageTypes.EXPLOSION)){
                 player.displayClientMessage(Component.literal("You are stunned by the explosion").withStyle(ChatFormatting.BOLD).withStyle(ChatFormatting.DARK_PURPLE), true);
                 player.addEffect(new MobEffectInstance(MobEffects.MOVEMENT_SLOWDOWN, (int) (event.getAmount() * 10), 5));
                 if (event.getAmount() >= 10F){
@@ -265,7 +259,7 @@ public class BadEffectsEvents {
 
     @SubscribeEvent
     public static void GiveKarmaEvent(LivingDeathEvent event){
-        Level world = event.getEntity().level;
+        Level world = event.getEntity().level();
         if (!world.isClientSide && event.getSource().getEntity() instanceof Player
                 && (event.getEntity() instanceof Villager || event.getEntity() instanceof IronGolem)
                 && !BadEffectsConfig.karma.get()){
@@ -280,7 +274,7 @@ public class BadEffectsEvents {
 
     @SubscribeEvent
     public static void GiveLightningStrikeEvent(TickEvent.PlayerTickEvent event){
-        Level world = event.player.level;
+        Level world = event.player.level();
         if (!world.isClientSide && !BadEffectsConfig.karma.get()){
             Player player = event.player;
             if (player.getEffect(MobEffects.UNLUCK) != null){
@@ -303,11 +297,11 @@ public class BadEffectsEvents {
 
     @SubscribeEvent
     public static void GiveVisionDisruptEvent(LivingDamageEvent event){
-        Level world = event.getEntity().level;
+        Level world = event.getEntity().level();
         if (!world.isClientSide && event.getEntity() instanceof Player
                 && !BadEffectsConfig.vision_disrupt.get()){
             Player player = (Player) event.getEntity();
-            if (event.getSource().isMagic() && player.getEffect(MobEffects.POISON) == null){
+            if (event.getSource().type().equals(DamageTypes.MAGIC) && player.getEffect(MobEffects.POISON) == null){
                 Random roll = new Random();
                 if (roll.nextDouble() < 0.34D){
                     player.displayClientMessage(Component.literal("Your vision got disrupted by magic").withStyle(ChatFormatting.BOLD).withStyle(ChatFormatting.DARK_PURPLE), true);
@@ -319,28 +313,28 @@ public class BadEffectsEvents {
 
     @SubscribeEvent
     public static void GiveBrokenHandEvent(BlockEvent.BreakEvent event){
-        Level world = event.getPlayer().level;
+        Level world = event.getPlayer().level();
         if (!world.isClientSide && event.getPlayer() instanceof Player
                 && !BadEffectsConfig.broken_hand.get()){
             BlockState blockState = world.getBlockState(event.getPos());
-            if (blockState.getTags().toList().contains(new TagKey<>(Registry.BLOCK_REGISTRY, new ResourceLocation("minecraft:logs")))
-                    || blockState.getTags().toList().contains(new TagKey<>(Registry.BLOCK_REGISTRY, new ResourceLocation("forge:logs")))
-                    || blockState.getTags().toList().contains(new TagKey<>(Registry.BLOCK_REGISTRY, new ResourceLocation("minecraft:glass")))
-                    || blockState.getTags().toList().contains(new TagKey<>(Registry.BLOCK_REGISTRY, new ResourceLocation("forge:glass")))
-                    || blockState.getTags().toList().contains(new TagKey<>(Registry.BLOCK_REGISTRY, new ResourceLocation("minecraft:glass_panes")))
-                    || blockState.getTags().toList().contains(new TagKey<>(Registry.BLOCK_REGISTRY, new ResourceLocation("forge:glass_panes")))){
+            if (blockState.getTags().toList().contains(new TagKey<>(Registries.BLOCK, new ResourceLocation("minecraft:logs")))
+                    || blockState.getTags().toList().contains(new TagKey<>(Registries.BLOCK, new ResourceLocation("forge:logs")))
+                    || blockState.getTags().toList().contains(new TagKey<>(Registries.BLOCK, new ResourceLocation("minecraft:glass")))
+                    || blockState.getTags().toList().contains(new TagKey<>(Registries.BLOCK, new ResourceLocation("forge:glass")))
+                    || blockState.getTags().toList().contains(new TagKey<>(Registries.BLOCK, new ResourceLocation("minecraft:glass_panes")))
+                    || blockState.getTags().toList().contains(new TagKey<>(Registries.BLOCK, new ResourceLocation("forge:glass_panes")))){
                 Player player = event.getPlayer();
                 if (player.getItemInHand(InteractionHand.MAIN_HAND).getItem() == Items.AIR){
                     Random roll = new Random();
                     if (roll.nextDouble() < 0.34D){
-                        if (blockState.getTags().toList().contains(new TagKey<>(Registry.BLOCK_REGISTRY, new ResourceLocation("minecraft:glass")))
-                                || blockState.getTags().toList().contains(new TagKey<>(Registry.BLOCK_REGISTRY, new ResourceLocation("forge:glass")))
-                                || blockState.getTags().toList().contains(new TagKey<>(Registry.BLOCK_REGISTRY, new ResourceLocation("minecraft:glass_panes")))
-                                || blockState.getTags().toList().contains(new TagKey<>(Registry.BLOCK_REGISTRY, new ResourceLocation("forge:glass_panes")))){
+                        if (blockState.getTags().toList().contains(new TagKey<>(Registries.BLOCK, new ResourceLocation("minecraft:glass")))
+                                || blockState.getTags().toList().contains(new TagKey<>(Registries.BLOCK, new ResourceLocation("forge:glass")))
+                                || blockState.getTags().toList().contains(new TagKey<>(Registries.BLOCK, new ResourceLocation("minecraft:glass_panes")))
+                                || blockState.getTags().toList().contains(new TagKey<>(Registries.BLOCK, new ResourceLocation("forge:glass_panes")))){
                             player.addEffect(new MobEffectInstance(MobEffects.WITHER, 100));
                         }
                         player.displayClientMessage(Component.literal("You hurt your hand").withStyle(ChatFormatting.BOLD).withStyle(ChatFormatting.RED), true);
-                        player.hurt(DamageSource.WITHER, 2);
+                        player.hurt(player.damageSources().wither(), 2);
                     }
                 }
             }
@@ -349,15 +343,15 @@ public class BadEffectsEvents {
 
     @SubscribeEvent
     public static void GiveInfectionEvent(LivingDamageEvent event){
-        Level world = event.getEntity().level;
+        Level world = event.getEntity().level();
         if (!world.isClientSide && event.getEntity() instanceof Player
                 && !BadEffectsConfig.infection.get()){
-            if (event.getSource() == DamageSource.CACTUS
-                    || event.getSource() == DamageSource.SWEET_BERRY_BUSH){
+            if (event.getSource().equals(DamageTypes.CACTUS)
+                    || event.getSource().equals(DamageTypes.SWEET_BERRY_BUSH)){
                 Player player = (Player) event.getEntity();
                 if (player.getArmorCoverPercentage() < 1.0f){
                     double adjustment = 0;
-                    if (event.getSource() == DamageSource.SWEET_BERRY_BUSH){
+                    if (event.getSource().equals(DamageTypes.SWEET_BERRY_BUSH)){
                         if (player.hasItemInSlot(EquipmentSlot.FEET)){
                             adjustment = adjustment + 0.5D;
                         }
@@ -365,7 +359,7 @@ public class BadEffectsEvents {
                             adjustment = adjustment + 0.5D;
                         }
                     }
-                    if (event.getSource() == DamageSource.CACTUS){
+                    if (event.getSource().equals(DamageTypes.CACTUS)){
                         adjustment = player.getArmorCoverPercentage();
                     }
                     Random roll = new Random();
@@ -380,11 +374,11 @@ public class BadEffectsEvents {
 
     @SubscribeEvent
     public static void GiveHeadBumpEvent(LivingDamageEvent event){
-        Level world = event.getEntity().level;
+        Level world = event.getEntity().level();
         if (!world.isClientSide && event.getEntity() instanceof Player
                 && !BadEffectsConfig.head_bump.get()){
             Player player = (Player) event.getEntity();
-            if (event.getSource() == DamageSource.FLY_INTO_WALL){
+            if (event.getSource().equals(DamageTypes.FLY_INTO_WALL)){
                 player.displayClientMessage(Component.literal("You hit the wall with your head").withStyle(ChatFormatting.BOLD).withStyle(ChatFormatting.RED), true);
                 player.addEffect(new MobEffectInstance(MobEffects.BLINDNESS, 25, 4));
                 player.addEffect(new MobEffectInstance(MobEffects.CONFUSION, (int) (event.getAmount() * 20)));
@@ -394,14 +388,14 @@ public class BadEffectsEvents {
 
     @SubscribeEvent
     public static void GiveExhaustedEvent(TickEvent.PlayerTickEvent event){
-        Level world = event.player.level;
+        Level world = event.player.level();
         if (!world.isClientSide && !BadEffectsConfig.exhausted.get() && (TickEvent.Phase.START == event.phase)){
             ServerStatsCounter serverstatscounter = ((ServerPlayer)event.player).getStats();
             int timeSinceRest = Mth.clamp(serverstatscounter.getValue(Stats.CUSTOM.get(Stats.TIME_SINCE_REST)), 1, Integer.MAX_VALUE);
-            if ((300 <= timeSinceRest) && (timeSinceRest % 100 == 0)){ // 1 day = 24000 ticks
+            if ((72000 <= timeSinceRest) && (timeSinceRest % 24000 == 0)){ // 1 day = 24000 ticks
                 event.player.displayClientMessage(Component.literal("You stay awake for too long, you feel exhausted")
                         .withStyle(ChatFormatting.BOLD).withStyle(ChatFormatting.GRAY), true);
-                switch ((timeSinceRest / 100) % 3){
+                switch ((timeSinceRest / 12000) % 3){
                     case 0:{
                         if (!event.player.hasEffect(MobEffects.MOVEMENT_SLOWDOWN)){
                             event.player.addEffect(new MobEffectInstance(MobEffects.MOVEMENT_SLOWDOWN, 24000,0));
