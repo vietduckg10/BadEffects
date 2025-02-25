@@ -3,7 +3,6 @@ package com.ducvn.badeffects.events;
 import com.ducvn.badeffects.config.BadEffectsConfig;
 import net.minecraft.ChatFormatting;
 import net.minecraft.core.BlockPos;
-import net.minecraft.core.Registry;
 import net.minecraft.core.registries.Registries;
 import net.minecraft.network.chat.Component;
 import net.minecraft.resources.ResourceLocation;
@@ -13,8 +12,6 @@ import net.minecraft.stats.Stats;
 import net.minecraft.tags.TagKey;
 import net.minecraft.util.Mth;
 import net.minecraft.world.InteractionHand;
-import net.minecraft.world.damagesource.DamageSource;
-import net.minecraft.world.damagesource.DamageSources;
 import net.minecraft.world.damagesource.DamageTypes;
 import net.minecraft.world.effect.MobEffectInstance;
 import net.minecraft.world.effect.MobEffects;
@@ -45,7 +42,6 @@ import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
 import java.util.Random;
-import java.util.stream.Collectors;
 
 @Mod.EventBusSubscriber
 public class BadEffectsEvents {
@@ -106,7 +102,7 @@ public class BadEffectsEvents {
         if (!world.isClientSide && event.getEntity() instanceof Player
                 && !BadEffectsConfig.broke_leg.get()){
             Player player = (Player) event.getEntity();
-            if ((event.getSource().type().equals(DamageTypes.FALL)) && event.getAmount() >= 2.0F){
+            if ((event.getSource() == player.damageSources().fall()) && (event.getAmount() >= 2.0F)){
                 player.displayClientMessage(Component.literal("You hurt your legs").withStyle(ChatFormatting.BOLD).withStyle(ChatFormatting.RED),true);
                 player.addEffect(new MobEffectInstance(MobEffects.MOVEMENT_SLOWDOWN, 20 + ((int) event.getAmount() - 2) * 20));
                 if (event.getAmount() >= 10){
@@ -144,7 +140,7 @@ public class BadEffectsEvents {
         if (!world.isClientSide && event.getEntity() instanceof Player
                 && !BadEffectsConfig.nausea_drowning.get()){
             Player player = (Player) event.getEntity();
-            if (event.getSource().type().equals(DamageTypes.DROWN)){
+            if (event.getSource() == player.damageSources().drown()){
                 Random roll = new Random();
                 if (roll.nextDouble() < 0.34D) {
                     player.displayClientMessage(Component.literal("You're drowning").withStyle(ChatFormatting.BOLD).withStyle(ChatFormatting.AQUA), true);
@@ -231,7 +227,7 @@ public class BadEffectsEvents {
         if (!world.isClientSide && event.getEntity() instanceof Player
                 && !BadEffectsConfig.stuck.get()){
             Player player = (Player) event.getEntity();
-            if (event.getSource().type().equals(DamageTypes.IN_WALL)){
+            if (event.getSource() == player.damageSources().inWall()){
                 Random roll = new Random();
                 if (roll.nextDouble() < 0.1D){
                     player.displayClientMessage(Component.literal("You're stuck and hard to move").withStyle(ChatFormatting.BOLD).withStyle(ChatFormatting.GRAY), true);
@@ -247,7 +243,7 @@ public class BadEffectsEvents {
         if (!world.isClientSide && event.getEntity() instanceof Player
                 && !BadEffectsConfig.stun.get()){
             Player player = (Player) event.getEntity();
-            if (event.getSource().type().equals(DamageTypes.EXPLOSION)){
+            if (event.getSource().type().msgId().equals("explosion.player")){
                 player.displayClientMessage(Component.literal("You are stunned by the explosion").withStyle(ChatFormatting.BOLD).withStyle(ChatFormatting.DARK_PURPLE), true);
                 player.addEffect(new MobEffectInstance(MobEffects.MOVEMENT_SLOWDOWN, (int) (event.getAmount() * 10), 5));
                 if (event.getAmount() >= 10F){
@@ -301,7 +297,8 @@ public class BadEffectsEvents {
         if (!world.isClientSide && event.getEntity() instanceof Player
                 && !BadEffectsConfig.vision_disrupt.get()){
             Player player = (Player) event.getEntity();
-            if (event.getSource().type().equals(DamageTypes.MAGIC) && player.getEffect(MobEffects.POISON) == null){
+            if ((event.getSource().type().msgId().equals("indirectMagic") || event.getSource().type().msgId().equals("magic"))
+                    && player.getEffect(MobEffects.POISON) == null){
                 Random roll = new Random();
                 if (roll.nextDouble() < 0.34D){
                     player.displayClientMessage(Component.literal("Your vision got disrupted by magic").withStyle(ChatFormatting.BOLD).withStyle(ChatFormatting.DARK_PURPLE), true);
@@ -346,12 +343,12 @@ public class BadEffectsEvents {
         Level world = event.getEntity().level();
         if (!world.isClientSide && event.getEntity() instanceof Player
                 && !BadEffectsConfig.infection.get()){
-            if (event.getSource().equals(DamageTypes.CACTUS)
-                    || event.getSource().equals(DamageTypes.SWEET_BERRY_BUSH)){
-                Player player = (Player) event.getEntity();
+            Player player = (Player) event.getEntity();
+            if (event.getSource() == player.damageSources().cactus()
+                    || event.getSource() == player.damageSources().sweetBerryBush()){
                 if (player.getArmorCoverPercentage() < 1.0f){
                     double adjustment = 0;
-                    if (event.getSource().equals(DamageTypes.SWEET_BERRY_BUSH)){
+                    if (event.getSource() == player.damageSources().sweetBerryBush()){
                         if (player.hasItemInSlot(EquipmentSlot.FEET)){
                             adjustment = adjustment + 0.5D;
                         }
@@ -359,7 +356,7 @@ public class BadEffectsEvents {
                             adjustment = adjustment + 0.5D;
                         }
                     }
-                    if (event.getSource().equals(DamageTypes.CACTUS)){
+                    if (event.getSource() == player.damageSources().cactus()){
                         adjustment = player.getArmorCoverPercentage();
                     }
                     Random roll = new Random();
@@ -378,7 +375,7 @@ public class BadEffectsEvents {
         if (!world.isClientSide && event.getEntity() instanceof Player
                 && !BadEffectsConfig.head_bump.get()){
             Player player = (Player) event.getEntity();
-            if (event.getSource().equals(DamageTypes.FLY_INTO_WALL)){
+            if (event.getSource() == player.damageSources().flyIntoWall()){
                 player.displayClientMessage(Component.literal("You hit the wall with your head").withStyle(ChatFormatting.BOLD).withStyle(ChatFormatting.RED), true);
                 player.addEffect(new MobEffectInstance(MobEffects.BLINDNESS, 25, 4));
                 player.addEffect(new MobEffectInstance(MobEffects.CONFUSION, (int) (event.getAmount() * 20)));
